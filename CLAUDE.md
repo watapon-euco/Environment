@@ -30,6 +30,25 @@ Delegate work to subagents instead of doing it inline. The general rule: anythin
 5. **Use `/compact`** between major task switches to drop stale context.
 6. **Prefer Explore for discovery** — it's already Haiku-driven and read-only, so it's the cheapest way to find files or understand structure.
 
+## Proactively suggest `/compact`
+
+The main agent cannot invoke `/compact` directly — it's a user command. To compensate, the main agent must **flag good compact moments in chat** so the user doesn't have to remember.
+
+Surface a one-line suggestion (`💡 good time to /compact`) at the end of the turn when any of these conditions hit:
+
+- A commit was just pushed, a PR was just created, or a PR was just merged.
+- A discrete task the user explicitly framed (a feature, a bug, a chunk of refactor) has just been reported as complete.
+- A verbose operation (full test suite run, large file ingestion, long log analysis) just finished and its detailed output is no longer needed for the next step.
+- The user signals a topic switch ("next, let's…", "now I want to work on…").
+
+Do NOT suggest compacting when:
+- Mid-task: ongoing state in recent turns is still needed.
+- Right after exploration if the main agent is about to act on what was just learned.
+- The session has fewer than ~10 turns since the last compact (or session start).
+- The user just asked a clarifying question — wait for the actual task to finish.
+
+Keep the suggestion brief: a single line, no justification, easy to ignore. The user decides whether to actually run it.
+
 ## Typical workflow
 
 For a feature with non-trivial code changes, the conductor pattern looks like:
