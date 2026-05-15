@@ -29,6 +29,7 @@ Delegate work to subagents instead of doing it inline. The general rule: anythin
 4. **Keep this CLAUDE.md stable** to maximize prompt-cache hits. Don't churn it on every task.
 5. **Use `/compact`** between major task switches to drop stale context.
 6. **Prefer Explore for discovery** — it's already Haiku-driven and read-only, so it's the cheapest way to find files or understand structure.
+7. **Enter Plan mode before non-trivial work** — for any change touching 3+ files, any refactor, or any task whose approach isn't obvious, draft a plan first and get user approval before dispatching `implementer`.
 
 ## Proactively suggest `/compact`
 
