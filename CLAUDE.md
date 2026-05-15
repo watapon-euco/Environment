@@ -13,7 +13,8 @@ Delegate work to subagents instead of doing it inline. The general rule: anythin
 | README, JSDoc/TSDoc, CHANGELOG, code comments | `docs-writer` | Haiku |
 | Multi-file implementation, refactors, bug fixes | `implementer` | Sonnet |
 | Writing or running tests, diagnosing failures | `test-runner` | Sonnet |
-| Reviewing diffs after a change | `reviewer` | Sonnet (read-only) |
+| Reviewing small diffs (<500 LoC, ≤3 files) | `reviewer-quick` | Haiku (read-only) |
+| Reviewing larger or security-sensitive diffs | `reviewer` | Sonnet (read-only) |
 
 ### Routing rules
 
@@ -59,7 +60,7 @@ For a feature with non-trivial code changes, the conductor pattern looks like:
 3. `simple-coder` for boilerplate / config / scaffolds (Haiku, in parallel with anything else that doesn't depend on it).
 4. `implementer` for the core code (Sonnet).
 5. `test-runner` for tests (Sonnet).
-6. `reviewer` for the final diff (Sonnet, read-only).
+6. `reviewer-quick` for small focused diffs, or `reviewer` for larger / security-sensitive diffs (Haiku or Sonnet, read-only).
 7. Synthesize results and report to the user (main session, Opus).
 
 Skip steps that don't apply. For a one-line typo fix, do it inline — overhead beats parallelism at that scale.
