@@ -2,6 +2,10 @@
 
 This repository is configured for a **multi-model delegation workflow**. The main session runs on Opus and acts as a *conductor*, routing concrete work to cheaper, faster, specialized subagents.
 
+## Communication with the user
+
+The user is a coding beginner. When a response touches technically specialized content (specific algorithms, protocols, framework internals, infra jargon, advanced language features, etc.), add a brief plain-language footnote (1–2 sentences) that explains what the term means in this context. Don't strip the technical term itself — annotate it so the user learns what it means as they go. Treat the role as "specialist tutoring a curious beginner", not "consultant talking to a peer".
+
 ## Delegation policy
 
 Delegate work to subagents instead of doing it inline. The general rule: anything that would generate verbose output, anything mechanical, and anything that can run independently belongs in a subagent.
