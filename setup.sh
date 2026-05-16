@@ -30,18 +30,18 @@ SETTINGS="${DST}/settings.json"
 if [ -f "${SETTINGS}" ]; then
   if command -v jq >/dev/null 2>&1; then
     tmp="$(mktemp)"
-    jq '.env = (.env // {}) | .env.AUTOCOMPACT_PCT_OVERRIDE = "70"' "${SETTINGS}" > "${tmp}" && mv "${tmp}" "${SETTINGS}"
-    echo "Merged  AUTOCOMPACT_PCT_OVERRIDE=70 into ${SETTINGS}"
+    jq '.env = (.env // {}) | .env.AUTOCOMPACT_PCT_OVERRIDE = "60"' "${SETTINGS}" > "${tmp}" && mv "${tmp}" "${SETTINGS}"
+    echo "Merged  AUTOCOMPACT_PCT_OVERRIDE=60 into ${SETTINGS}"
   else
     echo "Warn:   jq not found; manually ensure ${SETTINGS} contains:"
-    echo "        \"env\": { \"AUTOCOMPACT_PCT_OVERRIDE\": \"70\" }"
+    echo "        \"env\": { \"AUTOCOMPACT_PCT_OVERRIDE\": \"60\" }"
   fi
 else
   cat > "${SETTINGS}" <<'JSON'
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "AUTOCOMPACT_PCT_OVERRIDE": "70"
+    "AUTOCOMPACT_PCT_OVERRIDE": "60"
   }
 }
 JSON
