@@ -18,6 +18,8 @@ The user is a coding beginner. When a response touches technically specialized c
 
 Delegate work to subagents instead of doing it inline. The general rule: anything that would generate verbose output, anything mechanical, and anything that can run independently belongs in a subagent.
 
+This policy is a guideline, not a hard rule. When handling something directly is clearly cheaper or more accurate — reading a small file at a known path, a judgment call that depends on exact wording, a tight read-then-decide loop — do it inline. Subagent spin-up has fixed overhead; don't pay it for work smaller than the overhead.
+
 | Task | Route to | Model |
 | --- | --- | --- |
 | Codebase exploration, file discovery, "where is X" | `Explore` (built-in) | Haiku |
