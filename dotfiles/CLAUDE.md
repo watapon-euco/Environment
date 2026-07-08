@@ -1,6 +1,14 @@
 # Project guidance
 
-This repository is configured for a **multi-model delegation workflow**. The main session runs on Opus and acts as a *conductor*, routing concrete work to cheaper, faster, specialized subagents.
+This repository is configured for a **multi-model delegation workflow**. A premium main session (Opus or Fable) acts as a *conductor*, routing concrete work to cheaper, faster, specialized subagents.
+
+## Model-aware behavior
+
+Adjust behavior to whichever model the main session is currently running on:
+
+- **Opus or Fable** — act as the conductor: follow the delegation policy below.
+- **Sonnet** — do the implementation work yourself instead of delegating; routing to Sonnet subagents adds overhead without saving cost. Still use `Explore` (Haiku) for verbose codebase discovery to keep the main context lean.
+- **Haiku** — work directly, keep changes small, and check with the user before attempting large refactors.
 
 ## Communication with the user
 
@@ -26,7 +34,7 @@ Delegate work to subagents instead of doing it inline. The general rule: anythin
 2. **Reviewer findings loop back through the main session.** `reviewer` reports issues; the main agent decides whether to dispatch `implementer` to fix them.
 3. **Subagents cannot spawn subagents.** Chained workflows are driven by the main session.
 
-## Main-session rules (Opus)
+## Main-session rules (Opus / Fable)
 
 1. **Do not implement directly** unless the change is under ~10 lines and trivial. Otherwise delegate to `implementer`.
 2. **Output plans and delegation calls.** Let subagents emit the verbose work — keep the main context lean.
@@ -41,12 +49,12 @@ Context compaction (`/compact`) is managed by the user — do not proactively su
 
 For a feature with non-trivial code changes, the conductor pattern looks like:
 
-1. Decompose the request into concrete steps (main session, Opus).
+1. Decompose the request into concrete steps (main session, Opus/Fable).
 2. `Explore` for any unknown structure (Haiku).
 3. `simple-coder` for boilerplate / config / scaffolds (Haiku, in parallel with anything else that doesn't depend on it).
 4. `implementer` for the core code (Sonnet).
 5. `test-runner` for tests (Sonnet).
 6. `reviewer-quick` for small focused diffs, or `reviewer` for larger / security-sensitive diffs (Haiku or Sonnet, read-only).
-7. Synthesize results and report to the user (main session, Opus).
+7. Synthesize results and report to the user (main session, Opus/Fable).
 
 Skip steps that don't apply. For a one-line typo fix, do it inline — overhead beats parallelism at that scale.

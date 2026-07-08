@@ -48,4 +48,11 @@ JSON
   echo "Created ${SETTINGS}"
 fi
 
+# When run from a SessionStart hook, CLAUDE_ENV_FILE lets us inject env vars
+# into the *current* session (settings.json env is only read at startup).
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  echo 'AUTOCOMPACT_PCT_OVERRIDE=60' >> "${CLAUDE_ENV_FILE}"
+  echo "Applied AUTOCOMPACT_PCT_OVERRIDE=60 to current session via CLAUDE_ENV_FILE"
+fi
+
 echo "Done."
