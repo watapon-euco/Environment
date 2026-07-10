@@ -55,23 +55,31 @@ JSON
 
 read -r -d '' HOOK_CONTENT <<'SH' || true
 #!/bin/bash
-# SessionStart hook: bootstrap ~/.claude/ from watapon-euco/Environment.
+# SessionStart hook: bootstrap and keep ~/.claude/ in sync with
+# watapon-euco/Environment.
 #
-# Detection: if ~/.claude/CLAUDE.md already exists (an already-provisioned
-# local machine), do nothing. Ephemeral cloud containers start with no
-# ~/.claude/CLAUDE.md, so the sync always runs there. This avoids relying
-# on undocumented environment variables like CLAUDE_CODE_REMOTE.
+# Detection: a marker file (~/.claude/.env-dotfiles-managed) records that
+# this machine is managed by us. Once it exists, every session re-pulls
+# dotfiles/ and re-applies it, so config updates made in the source repo
+# always reach already-provisioned containers instead of going stale after
+# the first sync. Before the marker exists, an already-present
+# ~/.claude/CLAUDE.md is assumed to be a real user's own config and is left
+# untouched — first-contact bootstrap only runs when neither is present.
 
 set -uo pipefail
 
-if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+MARKER="$HOME/.claude/.env-dotfiles-managed"
+
+if [ ! -f "$MARKER" ] && [ -f "$HOME/.claude/CLAUDE.md" ]; then
   exit 0
 fi
 
 DOTFILES_REPO="https://github.com/watapon-euco/Environment"
 CLONE_DIR="/tmp/_env-dotfiles"
 
-if [ ! -d "$CLONE_DIR/.git" ]; then
+if [ -d "$CLONE_DIR/.git" ]; then
+  git -C "$CLONE_DIR" pull --ff-only --quiet || true
+else
   rm -rf "$CLONE_DIR"
   if ! git clone --depth 1 --quiet "$DOTFILES_REPO" "$CLONE_DIR"; then
     echo "environment sync: clone failed; continuing without shared config" >&2
@@ -80,6 +88,7 @@ if [ ! -d "$CLONE_DIR/.git" ]; then
 fi
 
 bash "$CLONE_DIR/setup.sh"
+touch "$MARKER"
 SH
 
 apply_one() {
