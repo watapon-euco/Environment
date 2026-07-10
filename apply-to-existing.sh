@@ -77,11 +77,14 @@ fi
 DOTFILES_REPO="https://github.com/watapon-euco/Environment"
 CLONE_DIR="/tmp/_env-dotfiles"
 
+# Always track main explicitly — a bare clone follows the repo's default
+# branch on GitHub, which has pointed at stale work branches before.
 if [ -d "$CLONE_DIR/.git" ]; then
-  git -C "$CLONE_DIR" pull --ff-only --quiet || true
+  git -C "$CLONE_DIR" fetch --quiet origin main \
+    && git -C "$CLONE_DIR" checkout --quiet -B main origin/main || true
 else
   rm -rf "$CLONE_DIR"
-  if ! git clone --depth 1 --quiet "$DOTFILES_REPO" "$CLONE_DIR"; then
+  if ! git clone --depth 1 --branch main --quiet "$DOTFILES_REPO" "$CLONE_DIR"; then
     echo "environment sync: clone failed; continuing without shared config" >&2
     exit 0
   fi
