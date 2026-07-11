@@ -58,19 +58,20 @@ read -r -d '' HOOK_CONTENT <<'SH' || true
 # SessionStart hook: bootstrap and keep ~/.claude/ in sync with
 # watapon-euco/Environment.
 #
-# Detection: a marker file (~/.claude/.env-dotfiles-managed) records that
-# this machine is managed by us. Once it exists, every session re-pulls
-# dotfiles/ and re-applies it, so config updates made in the source repo
-# always reach already-provisioned containers instead of going stale after
-# the first sync. Before the marker exists, an already-present
-# ~/.claude/CLAUDE.md is assumed to be a real user's own config and is left
-# untouched — first-contact bootstrap only runs when neither is present.
+# Cloud sessions (CLAUDE_CODE_REMOTE=true) always sync: a container may
+# boot from an environment snapshot that already carries a stale
+# ~/.claude/CLAUDE.md, and that stale copy must never block the refresh.
+# Elsewhere, a marker file (~/.claude/.env-dotfiles-managed) records that
+# this machine is managed by us and should keep re-syncing; without the
+# marker, a pre-existing ~/.claude/CLAUDE.md is assumed to be a real
+# user's own config and is left untouched.
 
 set -uo pipefail
 
 MARKER="$HOME/.claude/.env-dotfiles-managed"
 
-if [ ! -f "$MARKER" ] && [ -f "$HOME/.claude/CLAUDE.md" ]; then
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ] \
+  && [ ! -f "$MARKER" ] && [ -f "$HOME/.claude/CLAUDE.md" ]; then
   exit 0
 fi
 
@@ -90,6 +91,7 @@ else
   fi
 fi
 
+echo "environment sync: applying $(git -C "$CLONE_DIR" rev-parse --short HEAD)"
 bash "$CLONE_DIR/setup.sh"
 touch "$MARKER"
 SH
