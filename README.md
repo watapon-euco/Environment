@@ -10,8 +10,8 @@ Claude Code の個人設定（全プロジェクト共通）を管理する dotf
 | `dotfiles/agents/` | サブエージェント定義 → `~/.claude/agents/` |
 | `dotfiles/agents-optional/` | 普段は無効にしておくサブエージェント（`setup.sh` はコピーしない） |
 | `dotfiles/hooks/` | Claude Code フック（`context-guard.js` など） → `~/.claude/hooks/` |
-| `setup.sh` | 上記を `~/.claude/` にコピーし、`settings.json` に必要な設定を追加する |
-| `apply-to-existing.sh` | 既存リポジトリに、クラウドセッション用の自動同期フックを追加する |
+| `setup.sh` | 上記を `~/.claude/` にコピーし、`settings.json` にフックを登録する（Node で処理） |
+| `apply-to-existing.sh` | 既存リポジトリに、クラウドセッション用のフック（設定の自動同期と context-guard）を追加する |
 | `tests/` | `context-guard.js` のテスト（`node --test tests/context-guard.test.js`） |
 
 ## 使い方
@@ -21,8 +21,6 @@ Claude Code の個人設定（全プロジェクト共通）を管理する dotf
 ```bash
 bash setup.sh
 ```
-
-jq がない環境では `settings.json` は更新されないので、表示された内容を手作業で追加する。
 
 ## 運用メモ
 
@@ -35,6 +33,7 @@ jq がない環境では `settings.json` は更新されないので、表示さ
 - 使用率が 60/70/80/90%（既定）に達するたびに、Claude に「今のうちにチェックポイントを取って」と指示を追加する。
 - 保存先は2種類: 恒久的なプロジェクト知識（決定事項・理由・規約・コマンドなど）はプロジェクトのリポジトリ（CLAUDE.md や README など）か、そのプロジェクトの自動メモリに書く。一時的な進捗（今のゴール・完了/未完了・次にやること）は `%TEMP%/claude-handoff/<session>.md` に上書きする。
 - オートコンパクション（自動要約。長くなった会話を要約して圧縮する機能）でこの会話が要約された直後、SessionStart フックが `<session>.md` の内容を自動的に読み込んで会話に注入し直す。
+- クラウドセッションはユーザー設定（`~/.claude/settings.json`）のフックを使わないため、各リポジトリの `.claude/settings.json` にもクラウドでだけ動く同じフックを入れてある（`apply-to-existing.sh` で追加）。ローカルではそちらは何もせずに終わる。
 - 閾値を変えたい場合は `~/.claude/settings.json` の `env` に `CONTEXT_GUARD_PCT`（開始%、既定60）と `CONTEXT_GUARD_STEP`（何%刻みで再通知するか、既定10）を設定する。
 
 ## Haiku 版 Explore を有効にする

@@ -35,6 +35,8 @@ if [ ${#TARGETS[@]} -eq 0 ]; then
   TARGETS=("$(pwd)")
 fi
 
+# The context-guard hooks only act in cloud sessions, which ignore user-level
+# hooks; locally, the copies registered in ~/.claude/settings.json run instead.
 read -r -d '' SETTINGS_CONTENT <<'JSON' || true
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
@@ -45,6 +47,25 @@ read -r -d '' SETTINGS_CONTENT <<'JSON' || true
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && [ -f \"$HOME/.claude/hooks/context-guard.js\" ]; then node \"$HOME/.claude/hooks/context-guard.js\" compact; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && [ -f \"$HOME/.claude/hooks/context-guard.js\" ]; then node \"$HOME/.claude/hooks/context-guard.js\" stop; fi"
           }
         ]
       }
@@ -126,7 +147,7 @@ apply_one() {
       exit 0
     fi
 
-    git commit -m "Add Claude Code remote-sync hook (from watapon-euco/Environment)"
+    git commit -m "Sync Claude Code hooks from watapon-euco/Environment"
 
     if [ "$DO_PUSH" -eq 1 ]; then
       if git remote get-url origin >/dev/null 2>&1; then

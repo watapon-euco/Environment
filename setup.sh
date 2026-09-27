@@ -32,48 +32,43 @@ for f in "${SRC}/hooks"/*.js; do
 done
 echo "Synced  ${DST}/hooks/  ($(ls "${SRC}/hooks" | wc -l) hooks)"
 
+# Merge settings.json with Node (needed for the hooks anyway; jq isn't on
+# Windows). Cloud sessions run context-guard from each repo's
+# .claude/settings.json (see apply-to-existing.sh), so it is registered at
+# user level only on local machines.
 SETTINGS="${DST}/settings.json"
-if [ -f "${SETTINGS}" ]; then
-  if command -v jq >/dev/null 2>&1; then
-    tmp="$(mktemp)"
-    # AUTOCOMPACT_PCT_OVERRIDE (no CLAUDE_ prefix) was never a recognized name.
-    # Compaction now goes back to Claude Code's default; context-guard replaces it.
-    jq '
-      def dropGuard(arr):
-        (arr // []) | map(select(((.hooks // []) | any(.command // "" | contains("context-guard.js"))) | not));
+node - "${SETTINGS}" "${CLAUDE_CODE_REMOTE:-}" <<'JS'
+const fs = require('fs');
+const [file, remote] = process.argv.slice(2);
+const s = fs.existsSync(file)
+  ? JSON.parse(fs.readFileSync(file, 'utf8'))
+  : { $schema: 'https://json.schemastore.org/claude-code-settings.json' };
 
-      .env = ((.env // {}) | del(.AUTOCOMPACT_PCT_OVERRIDE) | del(.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE))
-      | if (.env | length) == 0 then del(.env) else . end
-      | .language = "japanese"
-      | .hooks.Stop = (dropGuard(.hooks.Stop) + [{"hooks":[{"type":"command","command":"node \"$HOME/.claude/hooks/context-guard.js\" stop"}]}])
-      | .hooks.SessionStart = (dropGuard(.hooks.SessionStart) + [{"matcher":"compact","hooks":[{"type":"command","command":"node \"$HOME/.claude/hooks/context-guard.js\" compact"}]}])
-    ' "${SETTINGS}" > "${tmp}" && mv "${tmp}" "${SETTINGS}"
-    echo "Merged  language=japanese and context-guard hooks (Stop, SessionStart) into ${SETTINGS}"
-  else
-    echo "Warn:   jq not found; manually ensure ${SETTINGS} contains:"
-    echo "        \"language\": \"japanese\","
-    echo "        no *AUTOCOMPACT_PCT_OVERRIDE entry under \"env\" (delete it if present), and:"
-    echo '        "hooks": {'
-    echo '          "Stop": [{"hooks":[{"type":"command","command":"node \"$HOME/.claude/hooks/context-guard.js\" stop"}]}],'
-    echo '          "SessionStart": [{"matcher":"compact","hooks":[{"type":"command","command":"node \"$HOME/.claude/hooks/context-guard.js\" compact"}]}]'
-    echo '        }'
-  fi
-else
-  cat > "${SETTINGS}" <<'JSON'
-{
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "language": "japanese",
-  "hooks": {
-    "Stop": [
-      { "hooks": [ { "type": "command", "command": "node \"$HOME/.claude/hooks/context-guard.js\" stop" } ] }
-    ],
-    "SessionStart": [
-      { "matcher": "compact", "hooks": [ { "type": "command", "command": "node \"$HOME/.claude/hooks/context-guard.js\" compact" } ] }
-    ]
-  }
+// Keys that earlier versions of this script set.
+if (s.env) {
+  delete s.env.AUTOCOMPACT_PCT_OVERRIDE;
+  delete s.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE;
+  if (Object.keys(s.env).length === 0) delete s.env;
 }
-JSON
-  echo "Created ${SETTINGS}"
-fi
+delete s.language;
+
+const guard = (mode) => `node "$HOME/.claude/hooks/context-guard.js" ${mode}`;
+const isGuard = (group) =>
+  (group.hooks || []).some((h) => String(h.command || '').includes('context-guard.js'));
+const wanted = {
+  Stop: { hooks: [{ type: 'command', command: guard('stop') }] },
+  SessionStart: { matcher: 'compact', hooks: [{ type: 'command', command: guard('compact') }] },
+};
+s.hooks = s.hooks || {};
+for (const [event, group] of Object.entries(wanted)) {
+  const kept = (s.hooks[event] || []).filter((g) => !isGuard(g));
+  s.hooks[event] = remote === 'true' ? kept : [...kept, group];
+  if (s.hooks[event].length === 0) delete s.hooks[event];
+}
+if (Object.keys(s.hooks).length === 0) delete s.hooks;
+
+fs.writeFileSync(file, JSON.stringify(s, null, 2) + '\n');
+JS
+echo "Updated ${SETTINGS}"
 
 echo "Done."
