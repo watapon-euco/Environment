@@ -1,62 +1,29 @@
-# Project guidance
+# Global instructions
 
-This repository is configured for a **multi-model delegation workflow**. A premium main session (Opus or Fable) acts as a *conductor*, routing concrete work to cheaper, faster, specialized subagents.
+## Communicating with the user
 
-## Model-aware behavior
+The user is a coding beginner. When a reply uses specialized terms (algorithms, protocols, framework internals, infra jargon, advanced language features), keep the term and add a 1–2 sentence plain-language footnote explaining what it means in this context — a specialist tutoring a curious beginner, not a consultant talking to a peer.
 
-Adjust behavior to whichever model the main session is currently running on:
+## Role by main-session model
 
-- **Opus or Fable** — act as the conductor: follow the delegation policy below.
-- **Sonnet** — do the implementation work yourself instead of delegating; routing to Sonnet subagents adds overhead without saving cost. Still use `Explore` (Haiku) for verbose codebase discovery to keep the main context lean.
-- **Haiku** — work directly, keep changes small, and check with the user before attempting large refactors.
+- **Opus / Fable**: act as the conductor — plan, delegate, and synthesize, following the delegation policy below.
+- **Sonnet**: implement directly; delegating to Sonnet subagents adds overhead without saving cost. Still use `Explore` for broad searches.
+- **Haiku**: work directly, keep changes small, and check with the user before large refactors.
 
-## Communication with the user
+Subagents: this section and the next are for the main session; follow your own agent instructions.
 
-The user is a coding beginner. When a response touches technically specialized content (specific algorithms, protocols, framework internals, infra jargon, advanced language features, etc.), add a brief plain-language footnote (1–2 sentences) that explains what the term means in this context. Don't strip the technical term itself — annotate it so the user learns what it means as they go. Treat the role as "specialist tutoring a curious beginner", not "consultant talking to a peer".
+## Delegation policy (Opus / Fable)
 
-## Delegation policy
+Delegate verbose, mechanical, or independent work. Work inline when that is clearly cheaper or more accurate: a trivial change under ~10 lines, reading a small file at a known path, a judgment call that depends on exact wording, or a tight read-then-decide loop.
 
-Delegate work to subagents instead of doing it inline. The general rule: anything that would generate verbose output, anything mechanical, and anything that can run independently belongs in a subagent.
-
-This policy is a guideline, not a hard rule. When handling something directly is clearly cheaper or more accurate — reading a small file at a known path, a judgment call that depends on exact wording, a tight read-then-decide loop — do it inline. Subagent spin-up has fixed overhead; don't pay it for work smaller than the overhead.
-
-| Task | Route to | Model |
+| Task | Agent | Model |
 | --- | --- | --- |
-| Codebase exploration, file discovery, "where is X" | `Explore` (built-in) | Haiku |
-| Boilerplate, config files, type stubs, scaffolds, simple wrappers | `simple-coder` | Haiku |
-| README, JSDoc/TSDoc, CHANGELOG, code comments | `docs-writer` | Haiku |
+| Broad codebase search, "where is X" | `Explore` (built-in) | main model, capped at Opus |
+| Boilerplate, config files, scaffolds, simple wrappers | `simple-coder` | Haiku |
+| README, doc comments, CHANGELOG | `docs-writer` | Haiku |
 | Multi-file implementation, refactors, bug fixes | `implementer` | Sonnet |
 | Writing or running tests, diagnosing failures | `test-runner` | Sonnet |
-| Reviewing small diffs (<500 LoC, ≤3 files) | `reviewer-quick` | Haiku (read-only) |
-| Reviewing larger or security-sensitive diffs | `reviewer` | Sonnet (read-only) |
+| Review: small diff (<500 lines, ≤3 files) | `reviewer-quick` | Haiku |
+| Review: larger or security-sensitive diff | `reviewer` | Sonnet |
 
-### Routing rules
-
-1. **Test failures loop back through the main session.** `test-runner` reports failures; the main agent decides whether to dispatch `implementer` for a production fix or have `test-runner` update a stale test.
-2. **Reviewer findings loop back through the main session.** `reviewer` reports issues; the main agent decides whether to dispatch `implementer` to fix them.
-3. **Subagents cannot spawn subagents.** Chained workflows are driven by the main session.
-
-## Main-session rules (Opus / Fable)
-
-1. **Do not implement directly** unless the change is under ~10 lines and trivial. Otherwise delegate to `implementer`.
-2. **Output plans and delegation calls.** Let subagents emit the verbose work — keep the main context lean.
-3. **Run independent subagents in parallel** (single message with multiple Agent tool calls) when their work doesn't depend on each other.
-4. **Keep this CLAUDE.md stable** to maximize prompt-cache hits. Don't churn it on every task.
-5. **Prefer Explore for discovery** — it's already Haiku-driven and read-only, so it's the cheapest way to find files or understand structure.
-6. **Enter Plan mode before non-trivial work** — for any change touching 3+ files, any refactor, or any task whose approach isn't obvious, draft a plan first and get user approval before dispatching `implementer`.
-
-Context compaction (`/compact`) is managed by the user — do not proactively suggest it.
-
-## Typical workflow
-
-For a feature with non-trivial code changes, the conductor pattern looks like:
-
-1. Decompose the request into concrete steps (main session, Opus/Fable).
-2. `Explore` for any unknown structure (Haiku).
-3. `simple-coder` for boilerplate / config / scaffolds (Haiku, in parallel with anything else that doesn't depend on it).
-4. `implementer` for the core code (Sonnet).
-5. `test-runner` for tests (Sonnet).
-6. `reviewer-quick` for small focused diffs, or `reviewer` for larger / security-sensitive diffs (Haiku or Sonnet, read-only).
-7. Synthesize results and report to the user (main session, Opus/Fable).
-
-Skip steps that don't apply. For a one-line typo fix, do it inline — overhead beats parallelism at that scale.
+Before changes touching 3+ files, refactors, or tasks with a non-obvious approach, enter Plan mode and get the user's approval before dispatching `implementer`.

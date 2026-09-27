@@ -30,31 +30,26 @@ SETTINGS="${DST}/settings.json"
 if [ -f "${SETTINGS}" ]; then
   if command -v jq >/dev/null 2>&1; then
     tmp="$(mktemp)"
-    jq '.env = (.env // {}) | .env.AUTOCOMPACT_PCT_OVERRIDE = "60"' "${SETTINGS}" > "${tmp}" && mv "${tmp}" "${SETTINGS}"
-    echo "Merged  AUTOCOMPACT_PCT_OVERRIDE=60 into ${SETTINGS}"
+    # AUTOCOMPACT_PCT_OVERRIDE (no CLAUDE_ prefix) was never a recognized name.
+    jq '.env = ((.env // {}) | del(.AUTOCOMPACT_PCT_OVERRIDE) | .CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "60")
+        | .language = "japanese"' "${SETTINGS}" > "${tmp}" && mv "${tmp}" "${SETTINGS}"
+    echo "Merged  CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=60 and language=japanese into ${SETTINGS}"
   else
     echo "Warn:   jq not found; manually ensure ${SETTINGS} contains:"
-    echo "        \"env\": { \"AUTOCOMPACT_PCT_OVERRIDE\": \"60\" }"
+    echo "        \"env\": { \"CLAUDE_AUTOCOMPACT_PCT_OVERRIDE\": \"60\" },"
+    echo "        \"language\": \"japanese\""
   fi
 else
   cat > "${SETTINGS}" <<'JSON'
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "AUTOCOMPACT_PCT_OVERRIDE": "60"
-  }
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
+  },
+  "language": "japanese"
 }
 JSON
   echo "Created ${SETTINGS}"
-fi
-
-# When run from a SessionStart hook, CLAUDE_ENV_FILE lets us inject env vars
-# into the *current* session (settings.json env is only read at startup).
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  if ! grep -q '^AUTOCOMPACT_PCT_OVERRIDE=' "${CLAUDE_ENV_FILE}" 2>/dev/null; then
-    echo 'AUTOCOMPACT_PCT_OVERRIDE=60' >> "${CLAUDE_ENV_FILE}"
-  fi
-  echo "Applied AUTOCOMPACT_PCT_OVERRIDE=60 to current session via CLAUDE_ENV_FILE"
 fi
 
 echo "Done."

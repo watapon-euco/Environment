@@ -44,7 +44,7 @@ read -r -d '' SETTINGS_CONTENT <<'JSON' || true
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh\""
           }
         ]
       }
