@@ -10,6 +10,7 @@ Claude Code の個人設定（全プロジェクト共通）を管理する dotf
 | `dotfiles/agents/` | サブエージェント定義 → `~/.claude/agents/` |
 | `dotfiles/agents-optional/` | 普段は無効にしておくサブエージェント（`setup.sh` はコピーしない） |
 | `dotfiles/hooks/` | Claude Code フック（`context-guard.js` など） → `~/.claude/hooks/` |
+| `dotfiles/skills/` | スキル（必要なときだけ読み込まれる手順書。フォルダごと） → `~/.claude/skills/`。長い注意事項は CLAUDE.md でなくここへ置く。現在: `safe-cleanup`（フォルダ・worktree・ブランチの削除やプロセス停止の前に読む安全手順） |
 | `setup.sh` | 上記を `~/.claude/` にコピーし、`settings.json` にフックを登録する（Node で処理） |
 | `apply-to-existing.sh` | 既存リポジトリに、クラウドセッション用のフック（設定の自動同期と context-guard）を追加する |
 | `tests/` | `context-guard.js` のテスト（`node --test tests/context-guard.test.js`） |

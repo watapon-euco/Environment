@@ -29,3 +29,7 @@ Delegate verbose, mechanical, or independent work. Work inline when that is clea
 | Review: larger or security-sensitive diff | `reviewer` | Sonnet |
 
 Before changes touching 3+ files, refactors, or tasks with a non-obvious approach, enter Plan mode and get the user's approval before dispatching `implementer`.
+
+## Deleting things
+
+Before removing folders or git worktrees, pruning branches, clearing caches, or stopping processes, load the `safe-cleanup` skill and follow it. This applies to subagents too.

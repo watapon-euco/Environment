@@ -32,6 +32,21 @@ for f in "${SRC}/hooks"/*.js; do
 done
 echo "Synced  ${DST}/hooks/  ($(ls "${SRC}/hooks" | wc -l) hooks)"
 
+# Skills are loaded only when invoked, so long checklists live here instead of
+# CLAUDE.md. Each skill is a folder; copy it whole (SKILL.md plus helpers).
+# Only skills that exist in dotfiles/ are touched; other skills in
+# ~/.claude/skills/ (plugins, synced) are left alone.
+if [ -d "${SRC}/skills" ]; then
+  mkdir -p "${DST}/skills"
+  for d in "${SRC}/skills"/*/; do
+    [ -d "${d}" ] || continue
+    name="$(basename "${d}")"
+    mkdir -p "${DST}/skills/${name}"
+    cp -rf "${d}." "${DST}/skills/${name}/"
+  done
+  echo "Synced  ${DST}/skills/  ($(ls "${SRC}/skills" | wc -l) skills)"
+fi
+
 # Merge settings.json with Node (needed for the hooks anyway; jq isn't on
 # Windows). Cloud sessions run context-guard from each repo's
 # .claude/settings.json (see apply-to-existing.sh), so it is registered at
